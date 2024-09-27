@@ -50,7 +50,7 @@ void MainWindow::read_device_value()
 {
   if (m_camera->streaming)
   {
-    int br, ct, sat, hue, wb_temp, gamma, sharpness, backlight, auto_white_balance;
+    int br, ct, sat, hue, wb_temp, gamma, sharpness, backlight, auto_white_balance, pan, tilt;
 
     // Query ranges and set slider ranges for each control
     v4l2_queryctrl br_ctrl = m_camera->query_control(V4L2_CID_BRIGHTNESS);
@@ -62,6 +62,10 @@ void MainWindow::read_device_value()
     v4l2_queryctrl sharp_ctrl = m_camera->query_control(V4L2_CID_SHARPNESS);
     v4l2_queryctrl backlight_ctrl = m_camera->query_control(V4L2_CID_BACKLIGHT_COMPENSATION);
     v4l2_queryctrl auto_wb_ctrl = m_camera->query_control(V4L2_CID_AUTO_WHITE_BALANCE);
+
+    // Add Pan and Tilt controls
+    v4l2_queryctrl pan_ctrl = m_camera->query_control(V4L2_CID_PAN_ABSOLUTE);
+    v4l2_queryctrl tilt_ctrl = m_camera->query_control(V4L2_CID_TILT_ABSOLUTE);
 
     // Set ranges and values or disable unsupported controls
 
@@ -129,14 +133,12 @@ void MainWindow::read_device_value()
     auto_white_balance = m_camera->get_control(V4L2_CID_AUTO_WHITE_BALANCE);
     if (auto_white_balance == 1)
     {
-      // Auto white balance enabled, check the box and disable manual white balance
       ui->whiteBalanceAuto->setChecked(true);
       ui->whiteBalanceSlider->setDisabled(true);
       ui->whiteBalance->setText("AUTO");
     }
     else
     {
-      // Auto white balance disabled, uncheck the box and enable manual white balance
       ui->whiteBalanceAuto->setChecked(false);
       if (wb_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
       {
@@ -196,6 +198,36 @@ void MainWindow::read_device_value()
       ui->backlightSlider->setValue(backlight);
       ui->backlight->setText(QString::number(backlight));
       ui->backlightSlider->setEnabled(true);
+    }
+
+    // Pan
+    if (pan_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+    {
+      ui->panSlider->setDisabled(true);
+      ui->pan->setText("NON");
+    }
+    else
+    {
+      ui->panSlider->setRange(pan_ctrl.minimum, pan_ctrl.maximum);
+      pan = m_camera->get_control(V4L2_CID_PAN_ABSOLUTE);
+      ui->panSlider->setValue(pan);
+      ui->pan->setText(QString::number(pan));
+      ui->panSlider->setEnabled(true);
+    }
+
+    // Tilt
+    if (tilt_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+    {
+      ui->tiltSlider->setDisabled(true);
+      ui->tilt->setText("NON");
+    }
+    else
+    {
+      ui->tiltSlider->setRange(tilt_ctrl.minimum, tilt_ctrl.maximum);
+      tilt = m_camera->get_control(V4L2_CID_TILT_ABSOLUTE);
+      ui->tiltSlider->setValue(tilt);
+      ui->tilt->setText(QString::number(tilt));
+      ui->tiltSlider->setEnabled(true);
     }
   }
 }
@@ -377,4 +409,16 @@ void MainWindow::on_backlightSlider_valueChanged(int value)
 {
   m_camera->set_control(V4L2_CID_BACKLIGHT_COMPENSATION, value);
   ui->backlight->setText(QString::number(value));
+}
+
+void MainWindow::on_panSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_PAN_ABSOLUTE, value);
+  ui->pan->setText(QString::number(value));
+}
+
+void MainWindow::on_tiltSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_TILT_ABSOLUTE, value);
+  ui->tilt->setText(QString::number(value));
 }
