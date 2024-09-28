@@ -28,7 +28,7 @@ struct ResolutionInfo
   std::vector<float> fps;
 };
 
-struct deviceInfo
+struct m_deviceInfo
 {
   std::string device_name;
   std::string driver;
@@ -54,25 +54,26 @@ public:
   ~usb_cam();
 
   std::vector<deviceData> find_device();
-  deviceInfo get_device_info(const std::string& devicePath);
+  m_deviceInfo get_device_info(const std::string& devicePath);
   void start_stream(const m_deviceConfig& config);
   void stop_stream();
 
   int set_control(int control_id, int value);
   int get_control(int control_id);
-  v4l2_queryctrl query_control(int control_id);
+  bool query_control(int control_id, v4l2_queryctrl& queryctl);
   void reset_controls_to_default();
 
   cv::Mat m_image;
   std::atomic<bool> streaming;
 
 private:
-  int xioctl(int fd, int request, void* arg);
-
   std::vector<void*> buffers;
   std::vector<size_t> buffer_lengths;
   std::thread stream_thread;
   int m_fd;
+
+  int xioctl(int fd, int request, void* arg);
+  std::string get_control_name(int control_id);
 };
 
 #endif

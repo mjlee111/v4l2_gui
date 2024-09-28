@@ -69,9 +69,9 @@ int usb_cam::xioctl(int fd, int request, void* arg)
   return r;
 }
 
-deviceInfo usb_cam::get_device_info(const std::string& devicePath)
+m_deviceInfo usb_cam::get_device_info(const std::string& devicePath)
 {
-  deviceInfo devInfo;
+  m_deviceInfo devInfo;
 
   int fd = open(devicePath.c_str(), O_RDWR);
   if (fd == -1)
@@ -334,9 +334,12 @@ int usb_cam::set_control(int control_id, int value)
   control.id = control_id;
   control.value = value;
 
+  std::string control_name = get_control_name(control_id);
+
   if (xioctl(m_fd, VIDIOC_S_CTRL, &control) == -1)
   {
-    std::cerr << "Failed to set control: " << strerror(errno) << std::endl;
+    std::cerr << "Failed to set control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
+              << std::endl;
     return -1;
   }
 
@@ -348,96 +351,164 @@ int usb_cam::get_control(int control_id)
   struct v4l2_control control;
   control.id = control_id;
 
+  std::string control_name = get_control_name(control_id);
+
   if (xioctl(m_fd, VIDIOC_G_CTRL, &control) == -1)
   {
-    std::cerr << "Failed to get control: " << strerror(errno) << std::endl;
+    std::cerr << "Failed to get control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
+              << std::endl;
     return -1;
   }
 
   return control.value;
 }
 
-v4l2_queryctrl usb_cam::query_control(int control_id)
+bool usb_cam::query_control(int control_id, v4l2_queryctrl& queryctrl)
 {
-  struct v4l2_queryctrl queryctrl;
   memset(&queryctrl, 0, sizeof(queryctrl));
   queryctrl.id = control_id;
 
-  if (xioctl(m_fd, VIDIOC_QUERYCTRL, &queryctrl) == -1)
+  std::string control_name = get_control_name(control_id);
+
+  if (ioctl(m_fd, VIDIOC_QUERYCTRL, &queryctrl) == -1)
   {
     if (errno != EINVAL)
     {
-      std::cerr << "Failed to query control: " << strerror(errno) << std::endl;
+      std::cerr << "Failed to query control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
+                << std::endl;
     }
     else
     {
-      std::cerr << "Control is not supported" << std::endl;
+      std::cerr << "Control (" << control_name << ", ID: " << control_id << ") is not supported." << std::endl;
     }
+    queryctrl.flags |= V4L2_CTRL_FLAG_DISABLED;
+    return false;
   }
   else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
   {
-    std::cerr << "Control is disabled" << std::endl;
+    std::cerr << "Control (" << control_name << ", ID: " << control_id << ") is disabled." << std::endl;
+    return false;
   }
-  return queryctrl;
+  return true;
 }
 
 void usb_cam::reset_controls_to_default()
 {
   struct v4l2_queryctrl queryctrl;
+  memset(&queryctrl, 0, sizeof(queryctrl));
 
-  // Reset Brightness
-  queryctrl = query_control(V4L2_CID_BRIGHTNESS);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
+  for (queryctrl.id = V4L2_CID_BASE; queryctrl.id < V4L2_CID_LASTP1; queryctrl.id++)
   {
-    set_control(V4L2_CID_BRIGHTNESS, queryctrl.default_value);
+    if (ioctl(m_fd, VIDIOC_QUERYCTRL, &queryctrl) == 0)
+    {
+      if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
+      {
+        set_control(queryctrl.id, queryctrl.default_value);
+      }
+    }
   }
 
-  // Reset Contrast
-  queryctrl = query_control(V4L2_CID_CONTRAST);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
+  for (queryctrl.id = V4L2_CID_PRIVATE_BASE; queryctrl.id < V4L2_CID_PRIVATE_BASE + 20; queryctrl.id++)
   {
-    set_control(V4L2_CID_CONTRAST, queryctrl.default_value);
+    if (ioctl(m_fd, VIDIOC_QUERYCTRL, &queryctrl) == 0)
+    {
+      if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
+      {
+        set_control(queryctrl.id, queryctrl.default_value);
+      }
+    }
   }
+}
 
-  // Reset Saturation
-  queryctrl = query_control(V4L2_CID_SATURATION);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
+std::string usb_cam::get_control_name(int control_id)
+{
+  switch (control_id)
   {
-    set_control(V4L2_CID_SATURATION, queryctrl.default_value);
-  }
-
-  // Reset Hue
-  queryctrl = query_control(V4L2_CID_HUE);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
-  {
-    set_control(V4L2_CID_HUE, queryctrl.default_value);
-  }
-
-  // Reset Gamma
-  queryctrl = query_control(V4L2_CID_GAMMA);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
-  {
-    set_control(V4L2_CID_GAMMA, queryctrl.default_value);
-  }
-
-  // Reset Sharpness
-  queryctrl = query_control(V4L2_CID_SHARPNESS);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
-  {
-    set_control(V4L2_CID_SHARPNESS, queryctrl.default_value);
-  }
-
-  // Reset White Balance Temperature
-  queryctrl = query_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
-  {
-    set_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE, queryctrl.default_value);
-  }
-
-  // Reset Backlight Compensation
-  queryctrl = query_control(V4L2_CID_BACKLIGHT_COMPENSATION);
-  if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED))
-  {
-    set_control(V4L2_CID_BACKLIGHT_COMPENSATION, queryctrl.default_value);
+    case V4L2_CID_BRIGHTNESS:
+      return "Brightness";
+    case V4L2_CID_CONTRAST:
+      return "Contrast";
+    case V4L2_CID_SATURATION:
+      return "Saturation";
+    case V4L2_CID_HUE:
+      return "Hue";
+    case V4L2_CID_GAMMA:
+      return "Gamma";
+    case V4L2_CID_SHARPNESS:
+      return "Sharpness";
+    case V4L2_CID_WHITE_BALANCE_TEMPERATURE:
+      return "White Balance Temperature";
+    case V4L2_CID_AUTO_WHITE_BALANCE:
+      return "Auto White Balance";
+    case V4L2_CID_EXPOSURE_ABSOLUTE:
+      return "Exposure (Absolute)";
+    case V4L2_CID_EXPOSURE_AUTO:
+      return "Auto Exposure";
+    case V4L2_CID_EXPOSURE_AUTO_PRIORITY:
+      return "Auto Exposure Priority";
+    case V4L2_CID_POWER_LINE_FREQUENCY:
+      return "Power Line Frequency";
+    case V4L2_CID_BACKLIGHT_COMPENSATION:
+      return "Backlight Compensation";
+    case V4L2_CID_FOCUS_ABSOLUTE:
+      return "Focus (Absolute)";
+    case V4L2_CID_FOCUS_AUTO:
+      return "Auto Focus";
+    case V4L2_CID_ZOOM_ABSOLUTE:
+      return "Zoom (Absolute)";
+    case V4L2_CID_PAN_ABSOLUTE:
+      return "Pan (Absolute)";
+    case V4L2_CID_TILT_ABSOLUTE:
+      return "Tilt (Absolute)";
+    case V4L2_CID_PRIVACY:
+      return "Privacy";
+    case V4L2_CID_ROTATE:
+      return "Rotate";
+    case V4L2_CID_HFLIP:
+      return "Horizontal Flip";
+    case V4L2_CID_VFLIP:
+      return "Vertical Flip";
+    case V4L2_CID_COLOR_KILLER:
+      return "Color Killer";
+    case V4L2_CID_COLORFX:
+      return "Color Effects";
+    case V4L2_CID_AUTOGAIN:
+      return "Auto Gain";
+    case V4L2_CID_GAIN:
+      return "Gain";
+    case V4L2_CID_HUE_AUTO:
+      return "Auto Hue";
+    case V4L2_CID_RED_BALANCE:
+      return "Red Balance";
+    case V4L2_CID_BLUE_BALANCE:
+      return "Blue Balance";
+    case V4L2_CID_DO_WHITE_BALANCE:
+      return "Do White Balance";
+    case V4L2_CID_AUTOBRIGHTNESS:
+      return "Auto Brightness";
+    case V4L2_CID_BAND_STOP_FILTER:
+      return "Band Stop Filter";
+    case V4L2_CID_ILLUMINATORS_1:
+      return "Illuminators 1";
+    case V4L2_CID_ILLUMINATORS_2:
+      return "Illuminators 2";
+    case V4L2_CID_ISO_SENSITIVITY:
+      return "ISO Sensitivity";
+    case V4L2_CID_ISO_SENSITIVITY_AUTO:
+      return "Auto ISO Sensitivity";
+    case V4L2_CID_EXPOSURE_METERING:
+      return "Exposure Metering";
+    case V4L2_CID_SCENE_MODE:
+      return "Scene Mode";
+    case V4L2_CID_3A_LOCK:
+      return "3A Lock (Auto Exposure, White Balance, and Focus Lock)";
+    case V4L2_CID_AUTO_FOCUS_START:
+      return "Start Auto Focus";
+    case V4L2_CID_AUTO_FOCUS_STOP:
+      return "Stop Auto Focus";
+    case V4L2_CID_AUTO_FOCUS_RANGE:
+      return "Auto Focus Range";
+    default:
+      return "Unknown Control";
   }
 }
