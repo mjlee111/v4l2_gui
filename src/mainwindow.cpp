@@ -46,192 +46,6 @@ void MainWindow::update_frame()
   }
 }
 
-void MainWindow::read_device_value()
-{
-  if (m_camera->streaming)
-  {
-    int br, ct, sat, hue, wb_temp, gamma, sharpness, backlight, auto_white_balance, pan, tilt;
-
-    // Query ranges and set slider ranges for each control
-    v4l2_queryctrl br_ctrl = m_camera->query_control(V4L2_CID_BRIGHTNESS);
-    v4l2_queryctrl ct_ctrl = m_camera->query_control(V4L2_CID_CONTRAST);
-    v4l2_queryctrl sat_ctrl = m_camera->query_control(V4L2_CID_SATURATION);
-    v4l2_queryctrl hue_ctrl = m_camera->query_control(V4L2_CID_HUE);
-    v4l2_queryctrl wb_ctrl = m_camera->query_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE);
-    v4l2_queryctrl gamma_ctrl = m_camera->query_control(V4L2_CID_GAMMA);
-    v4l2_queryctrl sharp_ctrl = m_camera->query_control(V4L2_CID_SHARPNESS);
-    v4l2_queryctrl backlight_ctrl = m_camera->query_control(V4L2_CID_BACKLIGHT_COMPENSATION);
-    v4l2_queryctrl auto_wb_ctrl = m_camera->query_control(V4L2_CID_AUTO_WHITE_BALANCE);
-
-    // Add Pan and Tilt controls
-    v4l2_queryctrl pan_ctrl = m_camera->query_control(V4L2_CID_PAN_ABSOLUTE);
-    v4l2_queryctrl tilt_ctrl = m_camera->query_control(V4L2_CID_TILT_ABSOLUTE);
-
-    // Set ranges and values or disable unsupported controls
-
-    // Brightness
-    if (br_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->brightnessSlider->setDisabled(true);
-      ui->brightness->setText("NON");
-    }
-    else
-    {
-      ui->brightnessSlider->setRange(br_ctrl.minimum, br_ctrl.maximum);
-      br = m_camera->get_control(V4L2_CID_BRIGHTNESS);
-      ui->brightnessSlider->setValue(br);
-      ui->brightness->setText(QString::number(br));
-      ui->brightnessSlider->setEnabled(true);
-    }
-
-    // Contrast
-    if (ct_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->contrastSlider->setDisabled(true);
-      ui->contrast->setText("NON");
-    }
-    else
-    {
-      ui->contrastSlider->setRange(ct_ctrl.minimum, ct_ctrl.maximum);
-      ct = m_camera->get_control(V4L2_CID_CONTRAST);
-      ui->contrastSlider->setValue(ct);
-      ui->contrast->setText(QString::number(ct));
-      ui->contrastSlider->setEnabled(true);
-    }
-
-    // Saturation
-    if (sat_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->saturationSlider->setDisabled(true);
-      ui->saturation->setText("NON");
-    }
-    else
-    {
-      ui->saturationSlider->setRange(sat_ctrl.minimum, sat_ctrl.maximum);
-      sat = m_camera->get_control(V4L2_CID_SATURATION);
-      ui->saturationSlider->setValue(sat);
-      ui->saturation->setText(QString::number(sat));
-      ui->saturationSlider->setEnabled(true);
-    }
-
-    // Hue
-    if (hue_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->hueSlider->setDisabled(true);
-      ui->hue->setText("NON");
-    }
-    else
-    {
-      ui->hueSlider->setRange(hue_ctrl.minimum, hue_ctrl.maximum);
-      hue = m_camera->get_control(V4L2_CID_HUE);
-      ui->hueSlider->setValue(hue);
-      ui->hue->setText(QString::number(hue));
-      ui->hueSlider->setEnabled(true);
-    }
-
-    // White Balance Auto Check
-    auto_white_balance = m_camera->get_control(V4L2_CID_AUTO_WHITE_BALANCE);
-    if (auto_white_balance == 1)
-    {
-      ui->whiteBalanceAuto->setChecked(true);
-      ui->whiteBalanceSlider->setDisabled(true);
-      ui->whiteBalance->setText("AUTO");
-    }
-    else
-    {
-      ui->whiteBalanceAuto->setChecked(false);
-      if (wb_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-      {
-        ui->whiteBalanceSlider->setDisabled(true);
-        ui->whiteBalance->setText("NON");
-      }
-      else
-      {
-        ui->whiteBalanceSlider->setRange(wb_ctrl.minimum, wb_ctrl.maximum);
-        wb_temp = m_camera->get_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE);
-        ui->whiteBalanceSlider->setValue(wb_temp);
-        ui->whiteBalance->setText(QString::number(wb_temp));
-        ui->whiteBalanceSlider->setEnabled(true);
-      }
-    }
-
-    // Gamma
-    if (gamma_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->gammaSlider->setDisabled(true);
-      ui->gamma->setText("NON");
-    }
-    else
-    {
-      ui->gammaSlider->setRange(gamma_ctrl.minimum, gamma_ctrl.maximum);
-      gamma = m_camera->get_control(V4L2_CID_GAMMA);
-      ui->gammaSlider->setValue(gamma);
-      ui->gamma->setText(QString::number(gamma));
-      ui->gammaSlider->setEnabled(true);
-    }
-
-    // Sharpness
-    if (sharp_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->sharpnessSlider->setDisabled(true);
-      ui->sharpness->setText("NON");
-    }
-    else
-    {
-      ui->sharpnessSlider->setRange(sharp_ctrl.minimum, sharp_ctrl.maximum);
-      sharpness = m_camera->get_control(V4L2_CID_SHARPNESS);
-      ui->sharpnessSlider->setValue(sharpness);
-      ui->sharpness->setText(QString::number(sharpness));
-      ui->sharpnessSlider->setEnabled(true);
-    }
-
-    // Backlight Compensation
-    if (backlight_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->backlightSlider->setDisabled(true);
-      ui->backlight->setText("NON");
-    }
-    else
-    {
-      ui->backlightSlider->setRange(backlight_ctrl.minimum, backlight_ctrl.maximum);
-      backlight = m_camera->get_control(V4L2_CID_BACKLIGHT_COMPENSATION);
-      ui->backlightSlider->setValue(backlight);
-      ui->backlight->setText(QString::number(backlight));
-      ui->backlightSlider->setEnabled(true);
-    }
-
-    // Pan
-    if (pan_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->panSlider->setDisabled(true);
-      ui->pan->setText("NON");
-    }
-    else
-    {
-      ui->panSlider->setRange(pan_ctrl.minimum, pan_ctrl.maximum);
-      pan = m_camera->get_control(V4L2_CID_PAN_ABSOLUTE);
-      ui->panSlider->setValue(pan);
-      ui->pan->setText(QString::number(pan));
-      ui->panSlider->setEnabled(true);
-    }
-
-    // Tilt
-    if (tilt_ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-    {
-      ui->tiltSlider->setDisabled(true);
-      ui->tilt->setText("NON");
-    }
-    else
-    {
-      ui->tiltSlider->setRange(tilt_ctrl.minimum, tilt_ctrl.maximum);
-      tilt = m_camera->get_control(V4L2_CID_TILT_ABSOLUTE);
-      ui->tiltSlider->setValue(tilt);
-      ui->tilt->setText(QString::number(tilt));
-      ui->tiltSlider->setEnabled(true);
-    }
-  }
-}
-
 void MainWindow::on_devices_currentIndexChanged(int index)
 {
   device_info = m_camera->get_device_info(devices[index].path);
@@ -302,7 +116,6 @@ void MainWindow::on_stream_clicked()
     config.format = ui->format->itemText(formatIndex).toStdString();
 
     m_camera->start_stream(config);
-
     read_device_value();
 
     streamTimer = new QTimer(this);
@@ -349,29 +162,8 @@ void MainWindow::on_hueSlider_valueChanged(int value)
 
 void MainWindow::on_whiteBalanceSlider_valueChanged(int value)
 {
-  // Disable auto white balance if it's enabled
-  int result = m_camera->set_control(V4L2_CID_AUTO_WHITE_BALANCE, 0);
-  if (result != 0)
-  {
-    std::cerr << "Failed to disable auto WB" << std::endl;
-    ui->whiteBalance->setText("Failed to disable auto WB");
-    return;
-  }
-
-  // Set the white balance temperature
-  result = m_camera->set_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE, value);
-
-  // Check if the control was successfully set
-  if (result == 0)
-  {
-    // Update the label if successful
-    ui->whiteBalance->setText(QString::number(value));
-  }
-  else
-  {
-    // Error handling if it fails to set the control
-    ui->whiteBalance->setText("Failed to set WB");
-  }
+  m_camera->set_control(V4L2_CID_WHITE_BALANCE_TEMPERATURE, value);
+  ui->whiteBalance->setText(QString::number(value));
 }
 
 void MainWindow::on_whiteBalanceAuto_stateChanged(int state)
@@ -380,7 +172,6 @@ void MainWindow::on_whiteBalanceAuto_stateChanged(int state)
   {
     m_camera->set_control(V4L2_CID_AUTO_WHITE_BALANCE, 1);
     ui->whiteBalanceSlider->setDisabled(true);
-    ui->whiteBalance->setText("AUTO");
   }
   else
   {
@@ -405,10 +196,34 @@ void MainWindow::on_sharpnessSlider_valueChanged(int value)
   ui->sharpness->setText(QString::number(value));
 }
 
-void MainWindow::on_backlightSlider_valueChanged(int value)
+void MainWindow::on_exposureSlider_valueChanged(int value)
 {
-  m_camera->set_control(V4L2_CID_BACKLIGHT_COMPENSATION, value);
-  ui->backlight->setText(QString::number(value));
+  m_camera->set_control(V4L2_CID_EXPOSURE, value);
+  ui->exposure->setText(QString::number(value));
+}
+
+void MainWindow::on_exposureAuto_stateChanged(int state)
+{
+  if (state == Qt::Checked)
+  {
+    m_camera->set_control(V4L2_CID_EXPOSURE_AUTO, 1);
+    ui->exposureSlider->setDisabled(true);
+  }
+  else
+  {
+    m_camera->set_control(V4L2_CID_EXPOSURE_AUTO, 0);
+    ui->exposureSlider->setEnabled(true);
+
+    int exposure = m_camera->get_control(V4L2_CID_EXPOSURE);
+    ui->exposureSlider->setValue(exposure);
+    ui->exposure->setText(QString::number(exposure));
+  }
+}
+
+void MainWindow::on_gainSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_GAIN, value);
+  ui->gain->setText(QString::number(value));
 }
 
 void MainWindow::on_panSlider_valueChanged(int value)
@@ -421,4 +236,123 @@ void MainWindow::on_tiltSlider_valueChanged(int value)
 {
   m_camera->set_control(V4L2_CID_TILT_ABSOLUTE, value);
   ui->tilt->setText(QString::number(value));
+}
+
+void MainWindow::on_backlightSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_BACKLIGHT_COMPENSATION, value);
+  ui->backlight->setText(QString::number(value));
+}
+
+void MainWindow::on_powerLineSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_POWER_LINE_FREQUENCY, value);
+  ui->powerLine->setText(QString::number(value));
+}
+
+void MainWindow::on_zoomSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_ZOOM_ABSOLUTE, value);
+  ui->zoom->setText(QString::number(value));
+}
+
+void MainWindow::on_focusSlider_valueChanged(int value)
+{
+  m_camera->set_control(V4L2_CID_FOCUS_ABSOLUTE, value);
+  ui->focus->setText(QString::number(value));
+}
+
+void MainWindow::on_focusAuto_stateChanged(int state)
+{
+  if (state == Qt::Checked)
+  {
+    m_camera->set_control(V4L2_CID_FOCUS_AUTO, 1);
+    ui->focusSlider->setDisabled(true);
+  }
+  else
+  {
+    m_camera->set_control(V4L2_CID_FOCUS_AUTO, 0);
+    ui->focusSlider->setEnabled(true);
+
+    int focus = m_camera->get_control(V4L2_CID_FOCUS_AUTO);
+    ui->focusSlider->setValue(focus);
+    ui->focus->setText(QString::number(focus));
+  }
+}
+
+void MainWindow::read_device_value()
+{
+  if (m_camera->streaming)
+  {
+    set_qslider_from_query(ui->brightnessSlider, ui->brightness, V4L2_CID_BRIGHTNESS);
+    set_qslider_from_query(ui->contrastSlider, ui->contrast, V4L2_CID_CONTRAST);
+    set_qslider_from_query(ui->saturationSlider, ui->saturation, V4L2_CID_SATURATION);
+    set_qslider_from_query(ui->hueSlider, ui->hue, V4L2_CID_HUE);
+    set_qslider_from_query(ui->whiteBalanceSlider, ui->whiteBalance, ui->whiteBalanceAuto, V4L2_CID_AUTO_WHITE_BALANCE,
+                           V4L2_CID_WHITE_BALANCE_TEMPERATURE);
+    set_qslider_from_query(ui->gammaSlider, ui->gamma, V4L2_CID_GAMMA);
+    set_qslider_from_query(ui->sharpnessSlider, ui->sharpness, V4L2_CID_SHARPNESS);
+    set_qslider_from_query(ui->exposureSlider, ui->exposure, ui->exposureAuto, V4L2_CID_EXPOSURE_AUTO,
+                           V4L2_CID_EXPOSURE_ABSOLUTE);
+    set_qslider_from_query(ui->gainSlider, ui->gain, V4L2_CID_GAIN);
+    set_qslider_from_query(ui->panSlider, ui->pan, V4L2_CID_PAN_ABSOLUTE);
+    set_qslider_from_query(ui->tiltSlider, ui->tilt, V4L2_CID_TILT_ABSOLUTE);
+    set_qslider_from_query(ui->backlightSlider, ui->backlight, V4L2_CID_BACKLIGHT_COMPENSATION);
+    set_qslider_from_query(ui->powerLineSlider, ui->powerLine, V4L2_CID_POWER_LINE_FREQUENCY);
+    set_qslider_from_query(ui->zoomSlider, ui->zoom, V4L2_CID_ZOOM_ABSOLUTE);
+    set_qslider_from_query(ui->focusSlider, ui->focus, ui->focusAuto, V4L2_CID_FOCUS_AUTO, V4L2_CID_FOCUS_ABSOLUTE);
+  }
+}
+
+void MainWindow::set_qslider_from_query(QSlider* slider, QLabel* label, int control_id)
+{
+  v4l2_queryctrl queryctrl;
+  int value;
+
+  if (m_camera->query_control(control_id, queryctrl))
+  {
+    slider->setEnabled(true);
+    value = m_camera->get_control(control_id);
+    slider->setRange(queryctrl.minimum, queryctrl.maximum);
+    slider->setValue(value);
+    label->setText(QString::number(value));
+  }
+  else
+  {
+    slider->setDisabled(true);
+    label->setText("NA");
+  }
+}
+
+void MainWindow::set_qslider_from_query(QSlider* slider, QLabel* label, QCheckBox* check, int control_id_auto,
+                                        int control_id)
+{
+  v4l2_queryctrl queryctrl;
+  int auto_value = m_camera->get_control(control_id_auto);
+  int value;
+
+  if (auto_value == 1)
+  {
+    check->setChecked(true);
+    slider->setDisabled(true);
+    label->setText("AUTO");
+  }
+  else
+  {
+    check->setChecked(false);
+    m_camera->query_control(control_id, queryctrl);
+    if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+    {
+      slider->setDisabled(true);
+      label->setText("NA");
+    }
+    else
+    {
+      slider->setEnabled(true);
+      value = m_camera->get_control(control_id);
+      slider->setRange(queryctrl.minimum, queryctrl.maximum);
+      slider->setValue(value);
+      label->setText(QString::number(value));
+    }
+  }
 }

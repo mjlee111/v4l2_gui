@@ -3,6 +3,10 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QGridLayout>
+#include <QSlider>
+#include <QLabel>
+#include <QCheckBox>
 #include <iostream>
 #include "usb_camera.h"
 
@@ -33,11 +37,19 @@ private slots:
   void on_hueSlider_valueChanged(int value);
   void on_whiteBalanceSlider_valueChanged(int value);
   void on_whiteBalanceAuto_stateChanged(int arg1);
-  void on_backlightSlider_valueChanged(int value);
-  void on_sharpnessSlider_valueChanged(int value);
   void on_gammaSlider_valueChanged(int value);
+  void on_sharpnessSlider_valueChanged(int value);
+  void on_exposureSlider_valueChanged(int value);
+  void on_exposureAuto_stateChanged(int arg1);
+  void on_gainSlider_valueChanged(int value);
+
   void on_panSlider_valueChanged(int value);
   void on_tiltSlider_valueChanged(int value);
+  void on_backlightSlider_valueChanged(int value);
+  void on_powerLineSlider_valueChanged(int value);
+  void on_zoomSlider_valueChanged(int value);
+  void on_focusSlider_valueChanged(int value);
+  void on_focusAuto_stateChanged(int arg1);
 
 private slots:
   void update_frame();
@@ -48,8 +60,10 @@ private:
   QTimer* streamTimer;
 
   std::vector<deviceData> devices;
-  deviceInfo device_info;
+  m_deviceInfo device_info;
 
   void read_device_value();
+  void set_qslider_from_query(QSlider* slider, QLabel* label, int control_id);
+  void set_qslider_from_query(QSlider* slider, QLabel* label, QCheckBox* check, int control_id_auto, int control_id);
 };
 #endif  // MAINWINDOW_H
