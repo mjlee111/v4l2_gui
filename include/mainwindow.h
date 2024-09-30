@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#define DEBUG
+
 #include <QMainWindow>
 #include <QTimer>
 #include <QGridLayout>
@@ -9,6 +11,7 @@
 #include <QCheckBox>
 #include <iostream>
 #include "usb_camera.h"
+#include "joystick.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -57,6 +60,7 @@ private slots:
 private:
   Ui::MainWindow* ui;
   usb_cam* m_camera;
+  Joystick* m_joystick;
   QTimer* streamTimer;
 
   std::vector<deviceData> devices;

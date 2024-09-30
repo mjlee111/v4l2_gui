@@ -1,7 +1,8 @@
 #include "./ui_mainwindow.h"
 #include "mainwindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow), m_camera(new usb_cam)
+MainWindow::MainWindow(QWidget* parent)
+  : QMainWindow(parent), ui(new Ui::MainWindow), m_camera(new usb_cam), m_joystick(new Joystick("/dev/input/js0"))
 {
   ui->setupUi(this);
   QIcon icon(":/image/images/icon.png");
@@ -26,10 +27,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
   {
     ui->format->addItem(QString::fromStdString(format));
   }
+
+  if (m_joystick->isConnected())
+  {
+    m_joystick->startEventThread();
+  }
 }
 
 MainWindow::~MainWindow()
 {
+  m_joystick->stopEventThread();
+  delete m_camera;
+  delete m_joystick;
   delete ui;
 }
 
@@ -120,7 +129,7 @@ void MainWindow::on_stream_clicked()
 
     streamTimer = new QTimer(this);
     connect(streamTimer, &QTimer::timeout, this, &MainWindow::update_frame);
-    streamTimer->start(30);
+    streamTimer->start(10);
     ui->stream->setStyleSheet("color: green;");
     ui->stream->setText("STOP");
     ui->devices->setEnabled(false);

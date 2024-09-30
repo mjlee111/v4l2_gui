@@ -1,6 +1,8 @@
 #ifndef USB_CAMERA_H
 #define USB_CAMERA_H
 
+#define DEBUG
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -15,6 +17,7 @@
 #include <sys/mman.h>
 #include <atomic>
 #include <opencv2/opencv.hpp>
+#include "debug.h"
 
 struct deviceData
 {

@@ -17,7 +17,7 @@ std::vector<deviceData> usb_cam::find_device()
   DIR* dir = opendir(videoPath.c_str());
   if (dir == nullptr)
   {
-    std::cerr << "Failed to open /dev directory" << std::endl;
+    CERR_ENDL("Failed to open /dev directory");
     return devices;
   }
 
@@ -33,6 +33,7 @@ std::vector<deviceData> usb_cam::find_device()
       int m_fd = open(devicePath.c_str(), O_RDWR | O_NONBLOCK);
       if (m_fd == -1)
       {
+        CERR_ENDL("Failed to open device: " << devicePath);
         std::cerr << "Failed to open device: " << devicePath << std::endl;
         continue;
       }
@@ -40,7 +41,7 @@ std::vector<deviceData> usb_cam::find_device()
       struct v4l2_capability cap;
       if (ioctl(m_fd, VIDIOC_QUERYCAP, &cap) == -1)
       {
-        std::cerr << "Failed to query device capabilities: " << devicePath << std::endl;
+        CERR_ENDL("Failed to query device capabilities: " << devicePath);
         close(m_fd);
         continue;
       }
@@ -76,14 +77,14 @@ m_deviceInfo usb_cam::get_device_info(const std::string& devicePath)
   int fd = open(devicePath.c_str(), O_RDWR);
   if (fd == -1)
   {
-    std::cerr << "Failed to open device: " << devicePath << std::endl;
+    CERR_ENDL("Failed to open device: " << devicePath);
     return devInfo;
   }
 
   struct v4l2_capability cap;
   if (xioctl(fd, VIDIOC_QUERYCAP, &cap) == -1)
   {
-    std::cerr << "Failed to get device capabilities. Error: " << strerror(errno) << std::endl;
+    CERR_ENDL("Failed to get device capabilities. Error: " << strerror(errno));
     close(fd);
     return devInfo;
   }
@@ -147,7 +148,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
   m_fd = open(config.path.c_str(), O_RDWR);
   if (m_fd == -1)
   {
-    std::cerr << "Failed to open device: " << config.path << std::endl;
+    CERR_ENDL("Failed to open device: " << config.path);
     return;
   }
 
@@ -157,6 +158,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
   fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   fmt.fmt.pix.width = config.resolution.first;
   fmt.fmt.pix.height = config.resolution.second;
+
   if (config.format == "MJPEG" || config.format == "Motion-JPEG")
   {
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
@@ -169,9 +171,29 @@ void usb_cam::start_stream(const m_deviceConfig& config)
   {
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
   }
+  else if (config.format == "NV12")
+  {
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
+  }
+  else if (config.format == "RGB24")
+  {
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+  }
+  else if (config.format == "GREY")
+  {
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
+  }
+  else if (config.format == "UYVY")
+  {
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
+  }
+  else if (config.format == "YVYU")
+  {
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YVYU;
+  }
   else
   {
-    std::cerr << "Unsupported format: " << config.format << std::endl;
+    CERR_ENDL("Unsupported format: " << config.format);
     close(m_fd);
     return;
   }
@@ -180,7 +202,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
   if (xioctl(m_fd, VIDIOC_S_FMT, &fmt) == -1)
   {
-    std::cerr << "Failed to set format" << std::endl;
+    CERR_ENDL("Failed to set format");
     close(m_fd);
     return;
   }
@@ -194,7 +216,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
   if (xioctl(m_fd, VIDIOC_S_PARM, &streamparm) == -1)
   {
-    std::cerr << "Failed to set frame rate" << std::endl;
+    CERR_ENDL("Failed to set frame rate");
     close(m_fd);
     return;
   }
@@ -207,7 +229,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
   if (xioctl(m_fd, VIDIOC_REQBUFS, &req) == -1)
   {
-    std::cerr << "Failed to request buffers" << std::endl;
+    CERR_ENDL("Failed to request buffers");
     close(m_fd);
     return;
   }
@@ -225,7 +247,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
     if (xioctl(m_fd, VIDIOC_QUERYBUF, &buf) == -1)
     {
-      std::cerr << "Failed to query buffer" << std::endl;
+      CERR_ENDL("Failed to query buffer");
       close(m_fd);
       return;
     }
@@ -235,14 +257,14 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
     if (buffers[i] == MAP_FAILED)
     {
-      std::cerr << "Failed to map buffer" << std::endl;
+      CERR_ENDL("Failed to map buffer");
       close(m_fd);
       return;
     }
 
     if (xioctl(m_fd, VIDIOC_QBUF, &buf) == -1)
     {
-      std::cerr << "Failed to queue buffer" << std::endl;
+      CERR_ENDL("Failed to queue buffer");
       close(m_fd);
       return;
     }
@@ -251,7 +273,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
   enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (xioctl(m_fd, VIDIOC_STREAMON, &type) == -1)
   {
-    std::cerr << "Failed to start streaming" << std::endl;
+    CERR_ENDL("Failed to start streaming");
     close(m_fd);
     return;
   }
@@ -268,7 +290,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
       if (xioctl(m_fd, VIDIOC_DQBUF, &buf) == -1)
       {
-        std::cerr << "Failed to dequeue buffer" << std::endl;
+        CERR_ENDL("Failed to dequeue buffer");
         break;
       }
 
@@ -278,7 +300,7 @@ void usb_cam::start_stream(const m_deviceConfig& config)
 
       if (xioctl(m_fd, VIDIOC_QBUF, &buf) == -1)
       {
-        std::cerr << "Failed to queue buffer" << std::endl;
+        CERR_ENDL("Failed to queue buffer");
         break;
       }
     }
@@ -306,7 +328,7 @@ void usb_cam::stop_stream()
   enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (xioctl(m_fd, VIDIOC_STREAMOFF, &type) == -1)
   {
-    std::cerr << "Failed to stop streaming" << std::endl;
+    CERR_ENDL("Failed to stop streaming");
   }
 
   for (size_t i = 0; i < buffers.size(); ++i)
@@ -338,8 +360,7 @@ int usb_cam::set_control(int control_id, int value)
 
   if (xioctl(m_fd, VIDIOC_S_CTRL, &control) == -1)
   {
-    std::cerr << "Failed to set control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
-              << std::endl;
+    CERR_ENDL("Failed to set control (" << control_name << ", ID: " << control_id << "): " << strerror(errno));
     return -1;
   }
 
@@ -355,8 +376,7 @@ int usb_cam::get_control(int control_id)
 
   if (xioctl(m_fd, VIDIOC_G_CTRL, &control) == -1)
   {
-    std::cerr << "Failed to get control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
-              << std::endl;
+    CERR_ENDL("Failed to get control (" << control_name << ", ID: " << control_id << "): " << strerror(errno));
     return -1;
   }
 
@@ -374,19 +394,18 @@ bool usb_cam::query_control(int control_id, v4l2_queryctrl& queryctrl)
   {
     if (errno != EINVAL)
     {
-      std::cerr << "Failed to query control (" << control_name << ", ID: " << control_id << "): " << strerror(errno)
-                << std::endl;
+      CERR_ENDL("Failed to query control (" << control_name << ", ID: " << control_id << "): " << strerror(errno));
     }
     else
     {
-      std::cerr << "Control (" << control_name << ", ID: " << control_id << ") is not supported." << std::endl;
+      CERR_ENDL("Control (" << control_name << ", ID: " << control_id << ") is not supported.");
     }
     queryctrl.flags |= V4L2_CTRL_FLAG_DISABLED;
     return false;
   }
   else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
   {
-    std::cerr << "Control (" << control_name << ", ID: " << control_id << ") is disabled." << std::endl;
+    CERR_ENDL("Control (" << control_name << ", ID: " << control_id << ") is disabled.");
     return false;
   }
   return true;
