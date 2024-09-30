@@ -46,12 +46,15 @@ set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
     src/usb_camera.cpp
+    src/joystick.cpp
 )
 
 # Header files
 set(HEADERS
     include/mainwindow.h
     include/usb_camera.h
+    include/joystick.h
+    include/debug.h
 )
 
 # UI files
