@@ -24,7 +24,6 @@ endif()
 
 # Find libuvc
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBUVC REQUIRED libuvc)
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
@@ -83,9 +82,9 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${MOC_SOURCES} ${UIC_SOURCES} ${RESOUR
 
 # Link the appropriate Qt Widgets library, libuvc, OpenCV, and pthread
 if(QT_VERSION_MAJOR EQUAL 6)
-    target_link_libraries(${PROJECT_NAME} Qt6::Widgets ${LIBUVC_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
+    target_link_libraries(${PROJECT_NAME} Qt6::Widgets ${OpenCV_LIBS} Threads::Threads)
 else()
-    target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${LIBUVC_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
+    target_link_libraries(${PROJECT_NAME} Qt5::Widgets ${OpenCV_LIBS} Threads::Threads)
 endif()
 
 # Platform-specific settings
